@@ -1,0 +1,289 @@
+/********************
+WebRTCまとめ
+*******************/
+#WebRTC(RTC=Real Time Communication)
+	ブラウザ上ビデオ/オーディオの通信や、データ通信をリアルタイムでやり取りをするための仕組み。
+	UDP/IPを使用。TCP/IPのようにパケットの到着は保証しないがオーバーヘッドが小さい。
+	似たものでWebSocketがあるが、これははサーバを間に挟んだ通信であり、WebRTCはブラウザ同士のP2Pであるというのが特徴。
+	多少の情報欠落があっても許容する代わりに通信のリアルタイム性を重視する。
+	UDPのポート番号は動的に割り振られ、49152～65525の範囲が使われる。
+	
+	基本的にブラウザはどこかのNAT(ネットワークアドレス変換)の下でprivateなアドレスを持つマシンで動いている。
+	サーバからブラウザへの通信は、サーバへの問い合わせへの返答であることをNATが判断している。
+	サーバからブラウザへのデータの通信はNAT経由
+	NATの下はプライベートなIPアドレス空間なので、お互いのマシンがちがうNAT下にいる場合は通信できない。
+	
+	#P2Pの仕組み
+		クライアントが相互に通信手段を共有 -> SDPの交換(Signaling)
+		通信経路候補の共有(Candidate)
+		端末(Peer)同士が直接パケットを送受信する(Connetcted)
+		通常は経路にNATをはさむ。
+		P2Pは送受信先の完全なアドレスとポートを知る必要がある。
+		NATによって変換される前のプライベートアドレスに届けるにはNATを超える必要がある -> NAT Traversal
+			※正確に相手端末にパケットだが届くようなNATのAddress:Portを得る
+			
+	#NAT Traversal
+		NATによって見えない相手の端末に直接パケットを届けるための技術。
+		NATの特性によっては難しい場合もある。
+		
+		#NATの種類
+			【Full cone NAT】
+				どのIP:Portからでもパケットを受信するNAT
+			【Address-Restricted NAT】
+				localmachineがパケットを送ったことがあるアドレスからのパケットを受け取ることができる
+			【Port-Restricted NAT】
+				Address-Restrictedに加え、送信元のポートも一致した場合のみ受信する。
+			【Synmmetric NAT】
+				内部パケットはすべて唯一のIP:PortにマップされるNAT。内部からのパケットを受け取った外部ホストからのみのパケットを受信する。
+				
+	そこで、ブラウザが互いに通信するための準備(シグナリング)が必要
+	
+	#シグナリング
+		通信する相手とマッチングするために、Signaling Serverを介してお互いを見つける仕組み。
+		シグナリングのプロトコルは規定されておらず自由に選べる
+		このためWebRTCを使ったサービスには必ずサーバが必要となる。
+		
+	基本的にそれぞれのクライアントはNATの下にいるので、クライアントから別のクライアントに直接データを送ることはできない。
+	そこでWebRTCでは「ICE(Interacrive Connectivity Establishment)」というフレームワークを使う。
+	
+	#ICE(Interacrive Connectivity Establishment)
+		STUN/TURNを含め、NAT Traversalへの最適な手法を提供する規格。
+		オファー/アンサーモデルで確立されたNAT越えの仕組み。
+			#オファー/アンサーモデル
+				通信するエージェント同士でメディア情報を記述したリクエストを出し合い対応可能なメディアを選択したレスポンスを返す方式。
+				たとえばクライアントAが「VP8,H264が使える」とクライアントBに申し出る(Offer)。クライアントBは自分が使えるメディアだけを「VP8は使える」というように答える(Answer)。
+				SDPはオファーとアンサーの記述方式(表現形式)とやり取りの仕組み。
+					#SDP(Session Description Protocol)
+					【セッションの記述】
+		         v=  (プロトコルのバージョン)
+		         o=  (発信元およびセッション識別子)
+		         s=  (セッション名)
+		         i=* (セッション情報)
+		         u=* (記述のURI)
+		         e=* (電子メールアドレス)
+		         p=* (電話番号)
+		         c=* (セッション情報 -- すべてのメディアに含まれる場合は
+		             必要なし)
+		         b=* (0行以上の帯域情報行)
+		         1つ以上の時間記述(「t=」と「r=」行については次を参照)
+		         z=* (タイムゾーンの調整)
+		         k=* (暗号化キー)
+		         a=* (0行以上のセッション属性行)
+		         0以上のメディア記述
+		
+		   	【時間記述】
+		         t=  (セッションがアクティブな時間)
+		         r=* (0回以上の繰り返し回数)
+		
+		   	【メディア記述(存在する場合)】
+		         m=  (メディア名と伝送アドレス)
+		         i=* (メディアのタイトル)
+		         c=* (接続情報 -- セッションレベルで含める場合はオプション)
+		         b=* (0行以上の帯域情報行)
+		         k=* (暗号化キー)
+		         a=* (0行以上のメディア属性行)
+		         
+		STUNとTURNを利用。
+		クライアントはセッションの確立前にSTUNのバインディングとリレーわりあてを適用してTransport Addressを取得し、サーバに提示。
+		サーバは提示されたTrasport Addressを優先順位に従って、peer間の接続性をチェックし双方向のメディア通信を実現する。
+		オファー/アンサーモデルを拡張し、SDPのオファー/アンサーにTrasport Addressを含めることで動作する。
+		
+	#STUN(Simple Traversal of UDP through NATs) (stun.l.google.com:19302, stun.services.mozilla.com, etc...)
+		クライアントがセッションを開始する際に、STUNサーバへリクエストを送信し、NATを取得する。
+		STUNは実装されているアルゴリズムでNATタイプを調査(WebRTCでは使っていない)し有効なNATアドレスを返却する。
+		UDPホールパンチングという仕組みでNATに穴をあける。
+		詳細なアルゴリズム判別法は[http://www.slideshare.net/yoshiakisugimoto9/webrtc-slide]のp62
+		
+		#UDP Hole Punching
+			NATの内側から特定IP:Portにパケットを送信させ、NAT側に送信元IP：Portで受信可能なマッピングを生成させる手法
+			双方のクライアントはSTUNサーバから得られたお互いの送信元IP:Port同士にパケットを送りあい、受信可能な状態にする。
+			主にRestricted-NATに対してP2P接続が有効になる
+		Restricted-Natの特性を利用し、STUNサーバ(外部NAT)に向けてパケットを送信したIP:Portを伝える。
+		#Binding
+			-BindingリクエストはNATが割り当てられるバインディングを確定するために使用。
+			-サーバはリクエストのソースIPアドレスとポートを調べて、クライアントに送り返されるレスポンスにそれらをコピーする。
+	
+	#TURN(Traversal Using Relay NAT)
+		TURNクライアント、パブリック・ネットワーク上のTRUNサーバにメディア中継(relay)の要求を行いより完全なNAT越え問題を解決する。
+		TURNサーバは、TURNクライアントに対してアドレスとポートを割り当ててレスポンスとして返す。
+		TURNクライアントはTURNサーバで割り当てられたアドレスとポートを中継して双方向でメディア通信を行う。
+		その特性により、主にSymmetric　NATに対して有効であるプロトコル。
+		#Allocate
+			-AllocateリクエストはTURNクライアントの中継を行うためのアドレスとポートを、サーバに要求する
+			-TURNサーバは中継用アドレスとポートを割り当てて、クライアントに応答を返す。
+			
+	#P2Pの接続確立フロー
+		-Peerの生成
+			/*コード部
+			var peer = new webkitRTCPeerConnection({
+				//iceServersというプロパティを持つオブジェクトを引数に渡す
+				"iceServers":  [{"url": "stun:stun.l.google.com:19302"}]
+			});
+			
+			//Signaling用にWebSocketの接続も行う
+			var websocket = new WebSocket('ws://www.xxx.xxx.xxx');
+			*/
+			
+		-データ・ビデオストリームの接続
+			/*
+			//メディアに関する設定
+			var constraint = {
+				audio: true,	//マイクを使うかどうか
+				video: true		//カメラを使うかどうか
+			};
+				
+			navigator.webkitGetUserMedia(
+				constraint,		
+				successCallback,	//メディア接続成功時のコールバック
+				errorCallback			//メディア接続失敗時のコールバック
+			);
+				
+			//自分のストリーム接続
+			navigator.webkitGetUserMedia(
+				{ audio: true, video: true },
+				function(stream){
+					//videoの要素取得
+					var video = document.getElementById('localVideo');
+					
+					//srcにBlob URLを指定するとカメラの画像がストリームに流れる。
+					video.src = window.webkitURL.createObjectURL(steram);
+					
+					//自分のpeerにカメラストリームを接続させる。
+					peer.addSteram(stream);
+				},
+				function(err){
+					console.log(err.name + ':' + err.message);
+				}
+			);
+			
+			//相手のストリーム接続
+			peer.onaddstream = function(evt){
+				//自分のリモートにセット
+				var video = document.getElementById('remoteVideo');
+				video.src = window.webkitURL.createObjectURL(evt.stream);
+			};
+			*/
+		-Session Description Protocolの交換
+			-offer/answer
+				/*
+				//offer送信
+				peer.createOffer(function(sdp)){
+					//引数のSDPは自分用
+					peer.setLocalDescription(sdp, function(){
+						//セット完了したら相手に自分のSDPを送る(Signaling)
+						websokcet.send(JSON.stringify({
+							"sdp":sdp,
+							"uuid": uuid
+						}));
+					});
+				});
+				
+				//Offerの受け取りとAnswerの生成(応答者)
+				//websocket.onmessage = function(evt){
+				var message = JSON.paser(evt.date),
+					sdp;
+					
+					if(message.sdp){
+						sdp = new RTCSessionDecription(message.sdp);
+						//相手用(remote)にセット
+						
+						peer.setRemoteDescription(sdp, function(){
+							//自分用へのoffer-SDPだったらAnswerを返す
+							if(sdp.type === "offer"){
+								peer.cretateAnswer(function(sdp){
+									peer.seLocalDecription(sdp,function(){
+										//セット完了したら、相手に自分のSDPを送ることができる
+										websocket.sent(JSON.stringify({
+											"sdp": sdp,
+											"uuid": uuid
+										}));
+									}));
+								});
+							}
+						});
+					}
+				};
+				
+				*/
+			-Signaling
+		-P2P通信経路候補の共有(IceCandidate)
+			/*通信経路の共有(発信者/応答者)
+			//STUNサーバから経路候補が見つかるたびに発火
+			peer.onicecandidate = function(evt){
+				var candidate;
+				//evt.candidateプロパティにデータが入っているので、WebSocketで送信
+				if(evt.candidate){
+					websocket.send(JSON.stringify({"candidate": evt.candidate}));
+				}
+			};
+			
+			//websocketのメッセージハンドら内で送信されてきたデータを復元してセットする
+			websocket.onmessage - function(evt){
+				var message = JSON.parse(evt.data),
+						candidtae;
+						
+				//evt.candidateがあればcandidateの共有
+				if(evt.candidate){
+					candidate = new RTCIceCandidate(evt.candidate);
+					peer.addIceCandidate(candidate);
+				}
+			};			
+			*/
+			
+			-IceCadidate
+				STUN(TURN)サーバにリクエストを送り、自分のNAT環境から通信可能な経路候補(Candidate)を取得する。
+				候補が見つかるとPeerに通知されるので、これをSignalingと同様に相手と共有する。
+				経路は複数見つかる(使用できるかどうかは別)
+				
+		-データ送信の共有orビデオストリームの共有
+		
+	
+				
+				
+		
+			
+			
+			
+	#WebRTC関連のJavaScript API
+		【RTCPeerConnection】
+			-Peerを生成するメインAPI
+			-このオブジェクトを介してP2P通信を行うため
+			-webkitRTCPPeerConnection(chrome,opera)
+			-mozRTCPeerConnection(firefox)
+			
+		【RTCSessionDescription】
+			-SDPに関するデータオブジェクト
+			-このデータを双方で共有することでP2P接続が確立される
+			-RTCSessionDescription(chrome,opera)
+			-mozRTCSessionDescription(firefox)
+			
+		【RTCIceCandidate】
+			-ICEによる接続経路候補(candidate)に関するオブジェクト
+			-host/srflx/relayなど
+			-RTCIceCandidate(chrome,opera)
+			-mozRTCIceCandidate(firefox)
+			
+		【navigator.getUserMedia】
+			-ブラウザからMedia Streamに関する接続を可能にするAPI
+			-現在はカメラ・マイクデバイスの入力のみサポート
+			-navigator.webkitGetUserMedia(chrome,opera)
+			-navigator.mozGetUserMedia(firefox)
+			
+	/*
+	 *参考サイト
+	*/
+	WebRTCに使われるP2Pの技術
+	[http://tjun.org/2013/12/webrtc_p2p/]
+	ICE(双方向接続性確立)
+	[http://www.wata-lab.meijo-u.ac.jp/file/seminar/2007/2007-Semi2-Kota_Wakahara.pdf]
+	SDP for WebRTC
+	[http://www.slideshare.net/iwashi86/20150311-web-rtcmeetup7sdp]
+	WebブラウザでP2Pを実現する、WebRTCのAPIと周辺技術
+	[http://www.slideshare.net/yoshiakisugimoto9/webrtc-slide]
+	
+	/*
+	WebRTCで遊ぶ
+	[https://html5experts.jp/mganeko/5181/]
+	//SkyWay
+	[https://html5experts.jp/series/skyway-tutorial/]
+	*/
