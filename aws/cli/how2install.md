@@ -27,6 +27,8 @@ aws ec2 describe-vpcs  # VPC設定がjsonで取得できるはず
 
 ### autocomplete
 ```sh
+# https://www.karakaram.com/aws-cli-getting-started/
+
 # ~/.bashrc
 complete -C '/usr/local/bin/aws_completer' aws
 
