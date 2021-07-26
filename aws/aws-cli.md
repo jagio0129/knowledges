@@ -24,3 +24,12 @@ aws configure
 # 確認
 aws ec2 describe-vpcs  # VPC設定がjsonで取得できるはず
 ```
+
+### autocomplete
+```sh
+# ~/.bashrc
+complete -C '/usr/local/bin/aws_completer' aws
+
+# ~/.config/fish/config.fish
+complete --command aws --no-files --arguments '(begin; set --local --export COMP_SHELL fish; set --local --export COMP_LINE (commandline); aws_completer | sed \'s/ $//\'; end)'
+```
