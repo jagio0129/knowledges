@@ -47,6 +47,35 @@ mongoDBはマスター/スレーブ方式を採用している
 
 詳細は「[レプリケーションの遅延](https://docs.mongodb.com/manual/tutorial/troubleshoot-replica-sets/#std-label-replica-set-replication-lag」)と「[フロー制御の確認](https://docs.mongodb.com/manual/tutorial/troubleshoot-replica-sets/#std-label-flow-control)」
 
+## 自動フェイルオーバー
+
+プライマリが設定された期間(electionTimeoutMillis: default 10s)を超えて他のメンバーと通信がない場合、歯科雨のあるセカンダリが自分を新しいプライマリとなるために投票を要求する。
+
+![](https://docs.mongodb.com/manual/images/replica-set-trigger-election.bakedsvg.svg)
+
+投票が正常に終了するまでレプリカセットは書き込み処理できない。プライマリがオフラインのときにリードレプリカ設定している場合は、レプリカセットは読み取りクエリを継続して実行できる。
+
+クラスタが新しいプライマリを選出するまでの時間の中央値は、レプリカの設定がデフォルトの場合、数条12秒を超えないようにすること。これにはプライマリを利用できないとマークし、投票を呼びかけて完了するまでの時間が含まれる。この時間を調整するには、setting.electionTimeoutMillisを変更する。ネットワークの遅延などにより、レプリカセットの投票完了までの時間が長くなることがあり、プライマリがいない状態でクラスタが動作する時間に影響する。これらの要因はクラスタのアーキテクチャによって異なる。
+
+electionTimoutMillisオプションをデフォルトの10sから下げると、プライマリの障害をより早く検出することができる。しかし、プライマリが正常であっても、一時的なネットワーク遅延などの要因により、クラスタがより頻繁に選挙を行う必要がある。その結果、w:1の書き込み操作のロールバックが増加する可能性がある。
+
+> `w` option
+> `w`オプションは、書き込み操作が指定した数のmongodインスタンスや、指定したタブを持つmongodインスタンスに伝搬したことの確認を要求する
+> https://docs.mongodb.com/manual/reference/write-concern/#std-label-wc-w
+
+アプリケーションの接続ロジックには、自動フェイルオーバーとそれに続く選挙への体制をもたせる必要がある。MongoDB3.6以降、MongoDBドライバはプライマリが失われたことを検知して特定の書き込み操作を自動的に一度だけ再試行することができるようになり、自動フェイルオーバーや投票への対応が追加で組み込まれた。
+
+- MongoDB4.2+ 互換性のあるドライバはデフォルトで再施工可能な書き込みを有効にする
+- MongoDB4.0及び3.6互換のドライバではretryWrites=trueを接続文字列に含めて明治的に再施工可能な書き込みを有効にする必要がある。
+
+4.4以降、MongoDBはミラーリングされた読み込みを提供し、投票で選ばれたセカンダリメンバーのキャッシュを直前まで持っている。セカンダリのキャッシュを予め持っておくことで、投票後の復帰を早くすることができる。
+
+フェイルオーバーのプロセスについてのより多くの詳細は以下から。
+
+- [Replica Set Elections](https://docs.mongodb.com/manual/core/replica-set-elections/#std-label-replica-set-elections)
+- [Retryable Writes](https://docs.mongodb.com/manual/core/retryable-writes/#std-label-retryable-writes)
+- [Rollbacks During Replica Set Failober](https://docs.mongodb.com/manual/core/replica-set-rollbacks/#std-label-replica-set-rollback)
+
 ## 参考サイト
 - [mongoDB Documentation - Replication](https://docs.mongodb.com/manual/replication/)
 - [MongoDBのレプリケーションを構築してみよう](https://gihyo.jp/dev/serial/01/mongodb/0004)
