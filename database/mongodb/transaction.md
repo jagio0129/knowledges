@@ -1,4 +1,12 @@
 トランザクション
 ===
 
-- [Transaction](https://docs.mongodb.com/manual/replication/#transactions)
+
+MongoDB4.0からレプリカセットでマルチドキュメントトランザクションが使えるようになった。
+
+マルチドキュメントトランザクションで読み込み操作がある場合は、優先読み込みプライマリを使わなければなりません。特定のトランザクション内のすべての操作は、特定のトランザクション内のすべての操作は、同じメンバーにルーティングされなければならない。
+
+トランザクションが複数のシャードに書き込む場合、外部のすべての読み取り操作が、コミットされたトランザクションの結果がシャード全体で見えるようになるのを待つ必要はない。例えば、トランザクションがコミットされ、シャードAでは書き込み1が見えているが、シャードBでは書き込み2がまだ見えていない場合、書き込み2を見ることなく書き込み1の結果を読むことができる。
+
+- [Transaction](https://docs.mongodb.com/manual/core/transactions/)
+- [MongoDBのトランザクション機能を使ってみた！【Node.js】](https://rightcode.co.jp/blog/information-technology/node-js-mongodb-transaction-function-use)
