@@ -57,7 +57,7 @@ java -Xmx1024M -Xms1024M -jar minecraft_server.1.17.1.jar nogui
   #By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).
   #Thu Sep 16 16:27:34 UTC 2021
 - eula=false
-+ eula=false
++ eula=true
 ```
 
 改めて起動
@@ -79,7 +79,7 @@ java -Xmx1024M -Xms1024M -jar minecraft_server.1.17.1.jar nogui
 [16:30:19] [Server thread/INFO]: Loading properties
 [16:30:19] [Server thread/INFO]: Default game type: SURVIVAL
 [16:30:19] [Server thread/INFO]: Generating keypair
-[16:30:20] [Server thread/INFO]: Starting Minecraft server on *:25565
+[16:30:20] [Server thread/INFO]: Starting Minecraft server on *:2556
 [16:30:20] [Server thread/INFO]: Using epoll channel type
 [16:30:20] [Server thread/INFO]: Preparing level "world"
 [16:30:27] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld
