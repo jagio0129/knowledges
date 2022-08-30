@@ -1,6 +1,15 @@
 AWS CLI
 ===
 
+## AWS アカウント作成
+基本的には以下記事に沿って作成
+
+- https://note.com/mc_kurita/n/n6d93b62fee28
+
+練習がてらrootユーザでの操作は行わず、IAMでメインの操作を行うユーザを新規作成する。
+
+- https://qiita.com/kzykmyzw/items/ca0c3276dfebb401f7d8
+
 ## インストール(Ubuntu 18.04)
 
 ```sh
@@ -34,4 +43,21 @@ complete -C '/usr/local/bin/aws_completer' aws
 
 # ~/.config/fish/config.fish
 complete --command aws --no-files --arguments '(begin; set --local --export COMP_SHELL fish; set --local --export COMP_LINE (commandline); aws_completer | sed \'s/ $//\'; end)'
+```
+
+## git-secrets install
+
+gitでクレデンシャルな情報をコミットしようとすると警告が出るようになる
+
+```sh
+# install
+cd
+git clone https://github.com/awslabs/git-secrets.git
+cd git-secrets
+sudo make install
+
+# apply git-secrets
+cd YOUR_REPOSITORY
+git secrets --install
+git secrets --register-aws
 ```

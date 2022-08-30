@@ -1,15 +1,7 @@
 Terafform
 ===
 
-## AWS アカウント作成
-基本的には以下記事に沿って作成
-
-- https://note.com/mc_kurita/n/n6d93b62fee28
-
-練習がてらrootユーザでの操作は行わず、IAMでメインの操作を行うユーザを新規作成する。
-
-- https://qiita.com/kzykmyzw/items/ca0c3276dfebb401f7d8
-
+[5分で分かるTerraform（Infrastructure as Code）](https://www.lac.co.jp/lacwatch/service/20200903_002270.html)
 
 ## tfenv install
 Terraformのバージョンを切り替えられるツール。rbenvのようなもの。
@@ -44,23 +36,6 @@ tfenv use 0.13.1
 # 作成しておくとterraformバージョンを指定できる
 touch .terraform-version
 echo "0.13.1" > .terraform-version
-```
-
-## git-secrets install
-
-gitでクレデンシャルな情報をコミットしようとすると警告が出るようになる
-
-```sh
-# install
-cd
-git clone https://github.com/awslabs/git-secrets.git
-cd git-secrets
-sudo make install
-
-# apply git-secrets
-cd YOUR_REPOSITORY
-git secrets --install
-git secrets --register-aws
 ```
 
 ## クレデンシャル情報のロード
