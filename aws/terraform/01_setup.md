@@ -1,4 +1,4 @@
-Terafform
+Terafform 導入
 ===
 
 [5分で分かるTerraform（Infrastructure as Code）](https://www.lac.co.jp/lacwatch/service/20200903_002270.html)
