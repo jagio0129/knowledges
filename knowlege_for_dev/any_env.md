@@ -9,7 +9,8 @@ anyenv install --init
 # anyenv-updateプラグイン
 #   anyenvで入れた*env系を一括でアップデートしてくれる
 mkdir -p ~/.anyenv/plugins
-git clone https://github.com/znz/anyenv-update.git ~/.anyenv/plugins/anyenv-updatgit clone https://github.com/znz/anyenv-git.git ~/.anyenv/plugins/anyenv-git
+git clone https://github.com/znz/anyenv-update.git ~/.anyenv/plugins/anyenv-update
+git clone https://github.com/znz/anyenv-git.git ~/.anyenv/plugins/anyenv-git
 # 操作は以下
 anyenv git pull # anyenvでインストールした全ての**env系とインストールされているプラグインのアップデート
 anyenv git gc # ガーベージコレクション（お掃除）
